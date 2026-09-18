@@ -1,6 +1,7 @@
 # PR #194 versus PR #195 results
 
-Recorded with the parameterized harness in [`run-integration.mjs`](./run-integration.mjs).
+Recorded with the issue-focused runners invoked by
+[`run-integration.mjs`](./run-integration.mjs).
 
 ## Inputs
 
@@ -16,23 +17,24 @@ pushed.
 The application harness ran with Node `22.23.1` and npm `10.9.8`. The baseline
 package worktree was installed and built using its required Node 24 toolchain.
 
-## Matrix
+## Results by issue
 
-| Check                                         | PR #194 (`86f4658`)              | PR #195 (`29da317`) |
-| --------------------------------------------- | -------------------------------- | ------------------- |
-| Packed `npm install --no-save`                | Pass                             | Pass                |
-| Actual production `insights-chrome` Webpack   | Pass                             | Pass                |
-| Nested-barrel generated declarations          | **Fail**                         | Pass                |
-| Strict valid TypeScript, `skipLibCheck=false` | Exit 0, partly vacuous           | Pass                |
-| Explicit generated invalid-props diagnostic   | Pass                             | Pass                |
-| Default-output invalid-props diagnostic       | **Exit 0, no diagnostic**        | Pass, exit 2        |
-| Native ESM Webpack entry                      | **Fail, `ERR_MODULE_NOT_FOUND`** | Pass                |
-| Native ESM generated declarations             | Not reached                      | Pass                |
+Common prerequisites passed for both tarballs:
 
-The invalid default-props check still passed for PR #194 when the generated
-file was explicitly included because its default export remained typed. The
-missing named entries fell back to `any`; the default-output control exposed
-that package consumers silently lost the generated augmentation.
+- packed `npm install --no-save`;
+- actual production `insights-chrome` Webpack compilation.
+
+| Runner                                                                               | PR #194 baseline (`86f4658`)                                                                | PR #195 candidate (`29da317`)                                |
+| ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| [`test-preserve-barrel-exports.mjs`](./test-preserve-barrel-exports.mjs)             | **Fail** — generated declarations leaked a nested module and omitted exposed named entries. | Pass                                                         |
+| [`test-expose-generated-declarations.mjs`](./test-expose-generated-declarations.mjs) | **Fail** — default-output invalid-props consumer exited 0 without a diagnostic.             | Pass — consumer exited 2 with the expected props diagnostic. |
+| [`test-native-esm.mjs`](./test-native-esm.mjs)                                       | **Fail** — native ESM Webpack failed with `ERR_MODULE_NOT_FOUND`.                           | Pass                                                         |
+
+The original monolithic run also showed that the explicit generated-file
+invalid-props check passed for PR #194 and that the valid TypeScript check
+exited 0. Those checks were partly vacuous: the default export remained typed,
+but missing named entries could fall back to `any`. The issue-focused runners
+now assert the generated keys and package-entry behavior directly.
 
 ## Generated declaration difference
 
