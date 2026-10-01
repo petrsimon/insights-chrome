@@ -46,6 +46,7 @@ import usePf5Styles from '../../hooks/usePf5Styles';
 import { preloadBreadcrumbStore } from '../../chrome/breadcrumbStoreBridge';
 const ProductSelection = lazyWithRetry(() => import('../Stratosphere/ProductSelection'));
 const Lightwell = lazyWithRetry(() => import('../../layouts/Lightwell'));
+const LoadingShellPrototype = lazyWithRetry(() => import('../LoadingShellPrototype'));
 
 const isRemotePluginManifest = (manifest: PluginManifest): manifest is RemotePluginManifest => manifest.registrationMethod !== 'local';
 
@@ -89,6 +90,16 @@ const ScalprumRoot = memo(
               element={
                 <Suspense fallback={LoadingFallback}>
                   <FavoritedServices Footer={<ChromeFooter />} />
+                </Suspense>
+              }
+            />
+          )}
+          {process.env.NODE_ENV !== 'production' && (
+            <Route
+              path="/prototype/loading-shell"
+              element={
+                <Suspense fallback={LoadingFallback}>
+                  <LoadingShellPrototype />
                 </Suspense>
               }
             />
